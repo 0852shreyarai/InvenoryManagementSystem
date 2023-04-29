@@ -1,0 +1,189 @@
+﻿@page "/Request"
+
+<nav class="navbar navbar-light bg-light justify-content-between">
+    <h1 class="navbar-brand mb-0 h1">Inventory Requests</h1>
+    <button class="btn btn-primary" type="button" @onclick="OpenAddInventoryReqDialog">
+        <span class="oi oi-plus" /> Add
+    </button>
+</nav>
+<table class="table">
+    <thead>
+        <tr>
+
+            <th>Item</th>
+        
+            <th>Quantity</th>
+            <th>RequestedBy</th>
+            <th>ApprovedBy</th>
+            <th>RequestedAt</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var inv in inventory)
+        {
+            <tr>
+
+                <td>@inv.Item</td>
+                <td>@inv.Quantity</td>
+                <td>@inv.RequestedBy</td>
+                <td>@inv.ApprovedBy</td>
+                <td>@inv.RequestedAt</td>
+                <td>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="()=>OpenEditInventoryReqDialog(inv)" type="button">
+                        <span class="oi oi-pencil" /> Edit
+                    </button>
+                    <button class="btn btn-outline-danger" @onclick="()=>OpenDeleteInventoryReqDialog(inv)" type="button">
+                        <span class="oi oi-delete" /> Delete
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (_showEditInvetoryReqDialog)
+{
+    <ModalDialog Title="@_dialogTitle" OnClose="@OnEditInventoryReqDialogClose" OkLabel="@_dialogOkLabel">
+        <form>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" @bind="_inventory.Item" placeholder="Item" />
+                <label for="floatingPassword">Item</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" @bind="_inventory.Quantity" placeholder="Quantity" />
+                <label for="floatingPassword">Quantity</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" @bind="_inventory.RequestedBy" placeholder="RequestedBy" />
+                <label for="floatingInput">Requested By</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" @bind="_inventory.ApprovedBy" placeholder="ApprovedBy" />
+                <label for="floatingInput">Approved By</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" @bind="_inventory.RequestedAt" placeholder="RequestedAt" />
+                <label for="floatingInput">Requested At</label>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrEmpty(_editInventoryReqErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_editInventoryReqErrorMessage" />
+        }
+    </ModalDialog>
+}
+@if (_showDeleteInvetoryReqDialog)
+{
+    <ModalDialog Title="Delete Inventory" OnClose="@OnDeleteInventoryReqDialogClose" OkLabel="Confirm">
+        <p>Are you sure you want to delete <strong>@_deleteInventoryReq.Item</strong>?</p>
+        @if (!string.IsNullOrEmpty(_deleteInventoryReqErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_deleteInventoryReqErrorMessage" />
+        }
+    </ModalDialog>
+}
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+    private bool _showEditInvetoryReqDialog { get; set; }
+    private bool _showDeleteInvetoryReqDialog { get; set; }
+    private List<InventoryReq> _inventories { get; set; }
+    private InventoryReq _deleteInventoryReq { get; set; }
+    private string _addUserErrorMessage { get; set; }
+    private string _deleteInventoryReqErrorMessage { get; set; }
+    private string _editInventoryReqErrorMessage { get; set; }
+    private string _dialogTitle { get; set; }
+    private string _dialogOkLabel { get; set; }
+    private InventoryReq _inventory { get; set; }
+
+    InventoryReq inventoryM = new InventoryReq();
+
+    private List<InventoryReq> inventory { get; set; }
+
+    protected override void OnInitialized()
+    {
+        inventory = InventoryRequestService.GetAll();
+    }
+
+    private void OpenAddInventoryReqDialog()
+    {
+        _dialogTitle = "Add Inventory";
+        _dialogOkLabel = "Add";
+        _inventory = new InventoryReq();
+        _inventory.Id = Guid.Empty;
+        _showEditInvetoryReqDialog = true;
+    }
+    private void OpenEditInventoryReqDialog(InventoryReq editReqInventory)
+    {
+        _dialogTitle = "Edit Inventory";
+        _dialogOkLabel = "Save";
+        _inventory = editReqInventory;
+        _showEditInvetoryReqDialog = true;
+
+    }
+    private void OnEditInventoryReqDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showEditInvetoryReqDialog = false;
+        }
+        else
+        {
+            try
+            {
+                _editInventoryReqErrorMessage = "";
+                if (_inventory.Id == Guid.Empty)
+                {
+                    _inventories = InventoryRequestService.Create(_inventory.Id, _inventory.Item, _inventory.Quantity, _inventory.RequestedBy, _inventory.ApprovedBy, _inventory.RequestedAt);
+
+                }
+                else
+                {
+                    _inventories = InventoryRequestService.Update(_inventory.Id, _inventory.Id, _inventory.Item,  _inventory.Quantity, _inventory.RequestedBy, _inventory.ApprovedBy, _inventory.RequestedAt);
+
+                }
+                _showEditInvetoryReqDialog = false;
+            }
+            catch (Exception e)
+            {
+                _editInventoryReqErrorMessage = e.Message;
+            }
+        }
+    }
+
+    private void OpenDeleteInventoryReqDialog(InventoryReq _inventory)
+    {
+        _deleteInventoryReq = _inventory;
+        _showDeleteInvetoryReqDialog = true;
+    }
+    private void OnDeleteInventoryReqDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showDeleteInvetoryReqDialog = false;
+            _deleteInventoryReq = null;
+        }
+        else
+        {
+            try
+            {
+                _deleteInventoryReqErrorMessage = "";
+                _inventories = InventoryRequestService.Delete(_globalState.CurrentUser.Id, _deleteInventoryReq.Id);
+                _showDeleteInvetoryReqDialog = false;
+                _deleteInventoryReq = null;
+            }
+            catch (Exception e)
+            {
+                _deleteInventoryReqErrorMessage = e.Message;
+            }
+        }
+    }
+
+
+}

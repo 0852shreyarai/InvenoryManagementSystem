@@ -1,0 +1,176 @@
+﻿@page "/inventories"
+
+
+<nav class="navbar navbar-light bg-light justify-content-between">
+    <h1 class="navbar-brand mb-0 h1">Inventories</h1>
+    <button class="btn btn-primary" type="button" @onclick="OpenAddInventoryDialog">
+        <span class="oi oi-plus" /> Add
+    </button>
+</nav>
+<table class="table">
+    <thead>
+        <tr>
+
+            <th>Item</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var inv in inventory)
+        {
+            <tr>
+
+                <td>@inv.Item</td>
+                <td>@inv.Price</td>
+                <td>@inv.Quantity</td>
+                <td>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="()=>OpenEditInventoryDialog(inv)" type="button">
+                        <span class="oi oi-pencil" /> Edit
+                    </button>
+                    <button class="btn btn-outline-danger" @onclick="()=>OpenDeleteInventoryDialog(inv)" type="button">
+                        <span class="oi oi-delete" /> Delete
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (_showEditInvetoryDialog)
+{
+    <ModalDialog Title="@_dialogTitle" OnClose="@OnEditInventoryDialogClose" OkLabel="@_dialogOkLabel">
+        <form>
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" @bind="_inventory.Item" placeholder="Item" />
+                <label for="floatingPassword">Item</label>
+            </div>
+            <div class="form-floating">
+                <input type="text" class="form-control" @bind="_inventory.Price" placeholder="Price" />
+                <label for="floatingInput">Price</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" @bind="_inventory.Quantity" placeholder="Quantity" />
+                <label for="floatingPassword">Quantity</label>
+            </div>
+        </form>
+
+        @if (!string.IsNullOrEmpty(_editInventoryErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_editInventoryErrorMessage" />
+        }
+    </ModalDialog>
+}
+@if (_showDeleteInvetoryDialog)
+{
+    <ModalDialog Title="Delete Inventory" OnClose="@OnDeleteInventoryDialogClose" OkLabel="Confirm">
+        <p>Are you sure you want to delete <strong>@_deleteInventory.Item</strong>?</p>
+        @if (!string.IsNullOrEmpty(_deleteInventoryErrorMessage))
+        {
+            <AlertMessage Type="danger" Message="@_deleteInventoryErrorMessage" />
+        }
+    </ModalDialog>
+}
+
+@code {
+    [CascadingParameter]
+    private GlobalState _globalState { get; set; }
+    private bool _showEditInvetoryDialog { get; set; }
+    private bool _showDeleteInvetoryDialog { get; set; }
+    private List<Inventory> _inventories { get; set; }
+    private Inventory _deleteInventory { get; set; }
+    private string _addUserErrorMessage { get; set; }
+    private string _deleteInventoryErrorMessage { get; set; }
+    private string _editInventoryErrorMessage { get; set; }
+    private string _dialogTitle { get; set; }
+    private string _dialogOkLabel { get; set; }
+    private Inventory _inventory { get; set; }
+
+    Inventory inventoryM = new Inventory();
+
+    private List<Inventory> inventory { get; set; }
+
+    protected override void OnInitialized()
+    {
+        inventory = InventoryService.GetAll();
+    }
+
+    private void OpenAddInventoryDialog()
+    {
+        _dialogTitle = "Add Inventory";
+        _dialogOkLabel = "Add";
+        _inventory = new Inventory();
+        _inventory.Id = Guid.Empty;
+        _showEditInvetoryDialog = true;
+    }
+    private void OpenEditInventoryDialog(Inventory editInventory)
+    {
+        _dialogTitle = "Edit Inventory";
+        _dialogOkLabel = "Save";
+        _inventory = editInventory;
+        _showEditInvetoryDialog = true;
+
+    }
+    private void OnEditInventoryDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showEditInvetoryDialog = false;
+        }
+        else
+        {
+            try
+            {
+                _editInventoryErrorMessage = "";
+                if (_inventory.Id == Guid.Empty)
+                {
+                    _inventories = InventoryService.Create(_inventory.Id, _inventory.Item, _inventory.Price, _inventory.Quantity);
+
+                }
+                else
+                {
+                    _inventories = InventoryService.Update(_inventory.Id, _inventory.Id, _inventory.Item, _inventory.Price, _inventory.Quantity);
+
+                }
+                _showEditInvetoryDialog = false;
+            }
+            catch (Exception e)
+            {
+                _editInventoryErrorMessage = e.Message;
+            }
+        }
+    }
+
+    private void OpenDeleteInventoryDialog(Inventory _inventory)
+    {
+        _deleteInventory = _inventory;
+        _showDeleteInvetoryDialog = true;
+    }
+    private void OnDeleteInventoryDialogClose(bool isCancel)
+    {
+        if (isCancel)
+        {
+            _showDeleteInvetoryDialog = false;
+            _deleteInventory = null;
+        }
+        else
+        {
+            try
+            {
+                _deleteInventoryErrorMessage = "";
+                _inventories = InventoryService.Delete(_globalState.CurrentUser.Id, _deleteInventory.Id);
+                _showDeleteInvetoryDialog = false;
+                _deleteInventory = null;
+            }
+            catch (Exception e)
+            {
+                _deleteInventoryErrorMessage = e.Message;
+            }
+        }
+    }
+
+
+}

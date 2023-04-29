@@ -1,0 +1,42 @@
+﻿
+.login-body {
+    display: flex;
+    align-items: center;
+    padding-top: 130px;
+    padding-bottom: 40px;
+    height: calc(100vh - 150px);
+}
+
+.form-login {
+    align-content: center;
+    width: 30%;
+    max-width: 500px;
+    margin: auto;
+}
+
+.text-center {
+    font-family: Arial, Helvetica, sans-serif;
+    width: 500px;
+}
+
+.alert-msg {
+    padding: 40px;
+}
+
+
+
+.form-login .form-floating:focus-within {
+    z-index: 2;
+}
+
+.form-login .username {
+    margin-bottom: -1px;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.form-login .password {
+    margin-bottom: 10px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}

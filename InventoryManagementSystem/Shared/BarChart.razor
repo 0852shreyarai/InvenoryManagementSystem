@@ -1,0 +1,48 @@
+﻿@page "/Chart"
+@using MudBlazor
+
+<nav class="navbar navbar-light bg-light justify-content-between">
+    <h1 class="navbar-brand mb-0 h1">Inventory Log</h1>
+    
+</nav>
+@{
+    List<string> ItemNameList = new List<string>();
+    List<double> QuantityList = new List<double>();
+
+    @foreach (var item in keyValuePairs)
+    {
+        ItemNameList.Add(item.Key);
+
+        QuantityList.Add((double)item.Value);
+    }
+
+    List<ChartSeries> Series = new List<ChartSeries>() { new ChartSeries() { Name = "Items", Data = QuantityList.ToArray() } };
+    string[] XAxisLabels = ItemNameList.ToArray();
+}
+
+<MudChart ChartType="ChartType.Bar" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="80%" Height="400px" Style="padding:100px">
+    <CustomGraphics>
+        <style>
+            .
+
+            .Rrrrr {
+                font: bold 30px sans-serif;
+                fill: rgb(62,44,221);
+                align-content: center;
+            }
+        </style>
+
+
+    </CustomGraphics>
+</MudChart>
+@code {
+    [CascadingParameter]
+    private Dictionary<string, int> keyValuePairs { get; set; }
+
+    protected override void OnInitialized()
+    {
+        keyValuePairs = ChartService.GetChartData();
+    }
+
+}
+
